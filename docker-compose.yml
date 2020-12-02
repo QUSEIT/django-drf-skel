@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  redis:
+    image: "redis:6"
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - local
+  postgres:
+    image: "postgres:12"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - local
+
+  backend:
+    build: ./
+    command: sh -c "cp .env.dev .env && pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "${BACKEND_POST}:8000"
+    networks:
+      - local
+    working_dir: /home/backend
+    volumes:
+      - ./:/home/backend
+    depends_on:
+      - redis
+      - postgres
+
+  celery:
+    build: ./
+    command: sh -c "cp .env.dev .env && pip install -r requirements.txt && celery -A erp worker -B -l info -c 1"
+    working_dir: /home/backend
+    networks:
+      - local
+    volumes:
+      - ./:/home/backend
+    depends_on:
+      - redis
+      - postgres
+      - backend
+
+networks:
+  local:
+    driver: bridge
