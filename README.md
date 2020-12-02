@@ -1,4 +1,4 @@
-# Supplier-portal
+# Django-drf-skel
 
 ## how to dev
 
